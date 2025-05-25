@@ -1,45 +1,38 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
+import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
 
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+type TabName = "index" | "explore" | "about";
+type IconName = ComponentProps<typeof Ionicons>["name"];
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+const icons: Record<TabName, IconName> = {
+  index:   "search",
+  explore: "compass",
+  about:   "information-circle",
+};
 
+export default function TabsLayout() {
   return (
     <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+      screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
+        tabBarIcon: ({ color, size }) => {
+          const name = route.name as TabName;
+          return (
+            <Ionicons
+              name={icons[name]}
+              size={size}
+              color={color}
+            />
+          );
+        },
+        tabBarActiveTintColor: "#007aff",
+        tabBarInactiveTintColor: "gray",
+      })}
+    >
+      <Tabs.Screen name="index"   options={{ title: "Search"  }} />
+      <Tabs.Screen name="explore" options={{ title: "Explore" }} />
+      <Tabs.Screen name="about"   options={{ title: "About"   }} />
     </Tabs>
   );
 }

@@ -1,75 +1,149 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+// app/(tabs)/index.tsx
+"use client";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  Image,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function HomeScreen() {
+const RAWG_KEY = "36cea21ff3204e468e5f07538178ba86";
+
+type Game = {
+  id: number;
+  name: string;
+  released: string;
+  background_image: string;
+  rating: number;
+};
+
+export default function SearchScreen() {
+  const insets = useSafeAreaInsets();
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Game[]>([]);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (query.length < 2) {
+      setResults([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `https://api.rawg.io/api/games?key=${RAWG_KEY}&search=${encodeURIComponent(
+            query
+          )}`,
+          { signal: controller.signal }
+        );
+        const json = await res.json();
+        setResults(json.results ?? []);
+      } catch (e: any) {
+        if (e.name !== "AbortError") console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // небольшой дебаунс
+    const t = setTimeout(load, 300);
+    return () => {
+      clearTimeout(t);
+      controller.abort();
+    };
+  }, [query]);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={{
+      flex: 1,
+      backgroundColor: "#fff",
+      paddingTop: insets.top,
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right,
+    }}>
+      <View style={styles.container}>
+      <TextInput
+        style={styles.input}
+        placeholder="Введите имя игры..."
+        value={query}
+        onChangeText={setQuery}
+      />
+
+      {loading && <ActivityIndicator style={{ marginVertical: 10 }} />}
+
+      <FlatList
+        data={results}
+        keyExtractor={(g) => String(g.id)}
+        renderItem={({ item }) => (
+          <Pressable
+            style={styles.card}
+            onPress={() => {
+              console.log('Navigating to detail with ID:', item.id);
+              router.push({
+                pathname: "/detail/[id]",
+                params: { id: item.id },
+              });
+            }}
+          >
+            <Image
+              source={{ uri: item.background_image }}
+              style={styles.image}
+            />
+            <View style={styles.info}>
+              <Text style={styles.title}>{item.name}</Text>
+              <Text style={styles.sub}>
+                {item.released} • ⭐ {item.rating}
+              </Text>
+            </View>
+          </Pressable>
+        )}
+      />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  container: {
+    flex: 1,
+    padding: 12,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  input: {
+    height: 40,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    marginBottom: 12,
   },
+  card: {
+    flexDirection: "row",
+    marginBottom: 12,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  image: { width: 100, height: 60 },
+  info: { flex: 1, padding: 8, justifyContent: "center" },
+  title: { fontSize: 16, fontWeight: "bold", marginBottom: 4 },
+  sub: { fontSize: 12, color: "#555" },
 });

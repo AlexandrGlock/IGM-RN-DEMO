@@ -1,29 +1,26 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
+// app/_layout.tsx
+import { Stack } from "expo-router";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
-  }
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Stack  initialRouteName="(tabs)">
+      {/* 1) Search/Explore/About */}
+      <Stack.Screen
+        name="(tabs)"
+        options={{ headerShown: false }}
+      />
+
+      {/* Добавляем экран detail */}
+      <Stack.Screen
+        name="detail"
+        options={{ title: "Detail" }}
+      />
+
+      {/* 3) 404 */}
+      <Stack.Screen
+        name="+not-found"
+        options={{ title: "Not Found" }}
+      />
+    </Stack>
   );
 }
