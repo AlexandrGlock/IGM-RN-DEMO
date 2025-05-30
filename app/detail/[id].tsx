@@ -7,6 +7,7 @@ import { getGameDetails } from '../../services/rawgApi';
 import { Ionicons } from '@expo/vector-icons';
 import HTML from 'react-native-render-html';
 import { useWindowDimensions } from 'react-native';
+import { useTheme } from '../../constants/ThemeContext';
 
 // Определяем расширенный тип для деталей игры
 type GameDetails = {
@@ -29,6 +30,7 @@ export default function GameDetailScreen() {
   const params = useLocalSearchParams();
   const id = params.id; // Получаем ID
   const { width } = useWindowDimensions(); // Для рендеринга HTML
+  const { theme } = useTheme();
 
   console.log('Detail Screen received ID:', id); // Оставляем логирование для отладки ID
 
@@ -56,74 +58,75 @@ export default function GameDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}> 
-        <ActivityIndicator size="large" color="#0000ff" />
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
 
   if (!gameDetails) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Game details not found or invalid ID.</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+        <Text style={{ color: theme.colors.text }}>Game details not found or invalid ID.</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {gameDetails.image_background && (
         <Image source={{ uri: gameDetails.image_background }} style={styles.image} />
       )}
-      <Text style={styles.title}>{gameDetails.name}</Text>
+      <Text style={[styles.title, { color: theme.colors.text, fontFamily: 'OpenSans' }]}>{gameDetails.name}</Text>
       <View style={styles.infoRow}>
-        <Ionicons name="star" size={18} color="gold" />
-        <Text style={styles.text}>Rating: {gameDetails.rating}</Text>
+        <Ionicons name="star" size={18} color={theme.colors.primary} />
+        <Text style={[styles.text, { color: theme.colors.text, fontFamily: 'OpenSans' }]}>Rating: {gameDetails.rating}</Text>
       </View>
       {gameDetails.metacritic !== null && (
         <View style={styles.infoRow}>
-          <Ionicons name="book" size={18} color="green" />
-          <Text style={styles.text}>Metacritic: {gameDetails.metacritic}</Text>
+          <Ionicons name="book" size={18} color={theme.colors.primary} />
+          <Text style={[styles.text, { color: theme.colors.text, fontFamily: 'OpenSans' }]}>Metacritic: {gameDetails.metacritic}</Text>
         </View>
       )}
       {gameDetails.released && (
         <View style={styles.infoRow}>
-          <Ionicons name="calendar" size={18} color="gray" />
-          <Text style={styles.text}>Released: {gameDetails.released}</Text>
+          <Ionicons name="calendar" size={18} color={theme.colors.primary} />
+          <Text style={[styles.text, { color: theme.colors.text, fontFamily: 'OpenSans' }]}>Released: {gameDetails.released}</Text>
         </View>
       )}
 
       {gameDetails.genres && gameDetails.genres.length > 0 && (
         <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Genres:</Text>
-          <Text style={styles.text}>{gameDetails.genres.map(g => g.name).join(', ')}</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text, fontFamily: 'OpenSans' }]}>Genres:</Text>
+          <Text style={[styles.text, { color: theme.colors.text, fontFamily: 'OpenSans' }]}>{gameDetails.genres.map(g => g.name).join(', ')}</Text>
         </View>
       )}
 
       {gameDetails.platforms && gameDetails.platforms.length > 0 && (
         <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Platforms:</Text>
-          <Text style={styles.text}>{gameDetails.platforms.map(p => p.platform.name).join(', ')}</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text, fontFamily: 'OpenSans' }]}>Platforms:</Text>
+          <Text style={[styles.text, { color: theme.colors.text, fontFamily: 'OpenSans' }]}>{gameDetails.platforms.map(p => p.platform.name).join(', ')}</Text>
         </View>
       )}
 
        {gameDetails.publishers && gameDetails.publishers.length > 0 && (
         <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Publishers:</Text>
-          <Text style={styles.text}>{gameDetails.publishers.map(p => p.name).join(', ')}</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text, fontFamily: 'OpenSans' }]}>Publishers:</Text>
+          <Text style={[styles.text, { color: theme.colors.text, fontFamily: 'OpenSans' }]}>{gameDetails.publishers.map(p => p.name).join(', ')}</Text>
         </View>
       )}
 
        {gameDetails.developers && gameDetails.developers.length > 0 && (
         <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Developers:</Text>
-          <Text style={styles.text}>{gameDetails.developers.map(d => d.name).join(', ')}</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text, fontFamily: 'OpenSans' }]}>Developers:</Text>
+          <Text style={[styles.text, { color: theme.colors.text, fontFamily: 'OpenSans' }]}>{gameDetails.developers.map(d => d.name).join(', ')}</Text>
         </View>
       )}
 
       {gameDetails.description && (gameDetails.description.length > 0) && (
         <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Description:</Text><HTML contentWidth={width} source={{ html: gameDetails.description }} baseStyle={styles.descriptionText} />
+          <Text style={[styles.sectionTitle, { color: theme.colors.text, fontFamily: 'OpenSans' }]}>Description:</Text>
+          <HTML contentWidth={width} source={{ html: gameDetails.description }} baseStyle={StyleSheet.flatten([styles.descriptionText, { color: theme.colors.text, fontFamily: 'OpenSans' }])} />
         </View>
       )}
     </ScrollView>
@@ -133,14 +136,12 @@ export default function GameDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: 16,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
   },
   image: {
     width: '100%',

@@ -1,20 +1,20 @@
 // app/(tabs)/index.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
   TextInput,
-  FlatList,
   Image,
   Pressable,
   StyleSheet,
-  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { SplashScreen, useRouter } from "expo-router";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
+import { useTheme } from '../../constants/ThemeContext';
 const RAWG_KEY = "36cea21ff3204e468e5f07538178ba86";
 
 type Game = {
@@ -27,123 +27,149 @@ type Game = {
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Game[]>([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    if (query.length < 2) {
+    const controller = new AbortController();
+    let t: number | undefined;
+
+    if (query.length >= 2) {
+      const load = async () => {
+        setLoading(true);
+        try {
+          const res = await fetch(
+            `https://api.rawg.io/api/games?key=${RAWG_KEY}&search=${encodeURIComponent(
+              query
+            )}`,
+            { signal: controller.signal }
+          );
+          const json = await res.json();
+          setResults(json.results ?? []);
+        } catch (e: any) {
+          if (e.name !== "AbortError") console.error(e);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      t = setTimeout(load, 300);
+    } else {
       setResults([]);
-      return;
+      controller.abort();
+      if (t) clearTimeout(t);
     }
 
-    const controller = new AbortController();
-    const load = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `https://api.rawg.io/api/games?key=${RAWG_KEY}&search=${encodeURIComponent(
-            query
-          )}`,
-          { signal: controller.signal }
-        );
-        const json = await res.json();
-        setResults(json.results ?? []);
-      } catch (e: any) {
-        if (e.name !== "AbortError") console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // небольшой дебаунс
-    const t = setTimeout(load, 300);
     return () => {
-      clearTimeout(t);
+      if (t) clearTimeout(t);
       controller.abort();
     };
-  }, [query]);
+  }, [query, query.length >= 2]);
+
+  const handleSearch = () => {
+    if (query.length < 2) {
+      return;
+    }
+    router.navigate(`/search-results/${encodeURIComponent(query)}`);
+  };
+
+  const styles = StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    container: {
+      flex: 1,
+      padding: 12,
+      paddingTop: 0,
+      paddingBottom: 0,
+    },
+    centeredContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    logo: {
+      width: 150,
+      height: 150,
+      marginBottom: 20,
+    },
+    input: {
+      height: 50,
+      borderColor: theme.colors.border,
+      borderWidth: 1,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      marginBottom: 12,
+      width: '100%',
+      fontSize: 16,
+      color: theme.colors.text,
+      backgroundColor: theme.colors.card,
+      fontFamily: 'OpenSans',
+    },
+    searchButton: {
+      backgroundColor: theme.colors.primary,
+      padding: 10,
+      borderRadius: 8,
+      marginTop: 10,
+    },
+    searchButtonText: {
+      color: theme.colors.buttonText,
+      fontSize: 16,
+      textAlign: 'center',
+      fontFamily: 'OpenSans',
+    },
+    card: {
+      flexDirection: "row",
+      marginBottom: 12,
+      backgroundColor: theme.colors.card,
+      borderRadius: 8,
+      overflow: "hidden",
+    },
+    image: { width: 100, height: 60 },
+    info: { flex: 1, padding: 8, justifyContent: "center" },
+    title: { fontSize: 16, fontWeight: "bold", marginBottom: 4, color: theme.colors.text, fontFamily: 'OpenSans' },
+    sub: { fontSize: 12, color: theme.colors.secondary, fontFamily: 'OpenSans' },
+  });
 
   return (
     <View style={{
       flex: 1,
-      backgroundColor: "#fff",
+      backgroundColor: theme.colors.background,
       paddingTop: insets.top,
       paddingBottom: insets.bottom,
       paddingLeft: insets.left,
       paddingRight: insets.right,
-    }}>
-      <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Введите имя игры..."
-        value={query}
-        onChangeText={setQuery}
-      />
-
-      {loading && <ActivityIndicator style={{ marginVertical: 10 }} />}
-
-      <FlatList
-        data={results}
-        keyExtractor={(g) => String(g.id)}
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.card}
-            onPress={() => {
-              console.log('Navigating to detail with ID:', item.id);
-              router.push({
-                pathname: "/detail/[id]",
-                params: { id: item.id },
-              });
-            }}
-          >
-            <Image
-              source={{ uri: item.background_image }}
-              style={styles.image}
-            />
-            <View style={styles.info}>
-              <Text style={styles.title}>{item.name}</Text>
-              <Text style={styles.sub}>
-                {item.released} • ⭐ {item.rating}
-              </Text>
-            </View>
+    }}
+    >
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={30}
+      >
+        <View style={styles.centeredContainer}>
+          <Image
+            source={theme.icons.appIcon}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Введите имя игры..."
+            placeholderTextColor={theme.colors.text}
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={handleSearch}
+          />
+          <Pressable style={styles.searchButton} onPress={handleSearch}>
+            <Text style={styles.searchButtonText}>Искать</Text>
           </Pressable>
-        )}
-      />
-      </View>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  container: {
-    flex: 1,
-    padding: 12,
-    paddingTop: 0,
-    paddingBottom: 0,
-  },
-  input: {
-    height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    marginBottom: 12,
-  },
-  card: {
-    flexDirection: "row",
-    marginBottom: 12,
-    backgroundColor: "#f9f9f9",
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  image: { width: 100, height: 60 },
-  info: { flex: 1, padding: 8, justifyContent: "center" },
-  title: { fontSize: 16, fontWeight: "bold", marginBottom: 4 },
-  sub: { fontSize: 12, color: "#555" },
-});

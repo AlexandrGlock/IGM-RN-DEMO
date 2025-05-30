@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
+import { useTheme } from '../../constants/ThemeContext';
 
 type TabName = "index" | "explore" | "about";
 type IconName = ComponentProps<typeof Ionicons>["name"];
@@ -12,10 +13,15 @@ const icons: Record<TabName, IconName> = {
 };
 
 export default function TabsLayout() {
+  const { theme } = useTheme();
+
   return (
     <Tabs
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarStyle: {
+          backgroundColor: theme.colors.background,
+        },
         tabBarIcon: ({ color, size }) => {
           const name = route.name as TabName;
           return (
@@ -26,13 +32,13 @@ export default function TabsLayout() {
             />
           );
         },
-        tabBarActiveTintColor: "#007aff",
-        tabBarInactiveTintColor: "gray",
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.secondary,
       })}
     >
-      <Tabs.Screen name="index"   options={{ title: "Search"  }} />
-      <Tabs.Screen name="explore" options={{ title: "Explore" }} />
-      <Tabs.Screen name="about"   options={{ title: "About"   }} />
+      <Tabs.Screen name="index"   options={{ }} />
+      <Tabs.Screen name="explore" options={{ }} />
+      <Tabs.Screen name="about"   options={{ }} />
     </Tabs>
   );
 }
